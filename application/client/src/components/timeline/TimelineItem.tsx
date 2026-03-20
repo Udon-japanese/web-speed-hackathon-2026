@@ -60,6 +60,7 @@ export const TimelineItem = ({ post, prioritizeFirstImage = false }: Props) => {
           >
             <img
               alt={post.user.profileImage.alt}
+              className="h-full w-full object-cover"
               decoding="async"
               height={256}
               loading="lazy"

@@ -5,10 +5,18 @@ interface Props {
 }
 
 export const Timeline = ({ timeline }: Props) => {
+  const firstPostWithImageIndex = timeline.findIndex((post) => (post.images?.length ?? 0) > 0);
+
   return (
     <section>
       {timeline.map((post, idx) => {
-        return <TimelineItem key={post.id} post={post} prioritizeFirstImage={idx === 0} />;
+        return (
+          <TimelineItem
+            key={post.id}
+            post={post}
+            prioritizeFirstImage={idx === firstPostWithImageIndex}
+          />
+        );
       })}
     </section>
   );

@@ -1,7 +1,7 @@
 import classNames from "classnames";
 import { Animator, Decoder } from "gifler";
 import { GifReader } from "omggif";
-import { RefCallback, useCallback, useRef, useState } from "react";
+import { RefCallback, useCallback, useEffect, useRef, useState } from "react";
 
 import { AspectRatioBox } from "@web-speed-hackathon-2026/client/src/components/foundation/AspectRatioBox";
 import { FontAwesomeIcon } from "@web-speed-hackathon-2026/client/src/components/foundation/FontAwesomeIcon";
@@ -16,7 +16,35 @@ interface Props {
  * クリックすると再生・一時停止を切り替えます。
  */
 export const PausableMovie = ({ src }: Props) => {
-  const { data, isLoading } = useFetch(src, fetchBinary);
+  const [shouldLoadMovie, setShouldLoadMovie] = useState(false);
+  const rootRef = useRef<HTMLDivElement>(null);
+  const { data, isLoading } = useFetch(src, fetchBinary, { enabled: shouldLoadMovie });
+
+  useEffect(() => {
+    if (shouldLoadMovie) {
+      return;
+    }
+
+    const target = rootRef.current;
+    if (target === null) {
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (!entry?.isIntersecting) {
+          return;
+        }
+
+        setShouldLoadMovie(true);
+        observer.disconnect();
+      },
+      { rootMargin: "256px 0px" },
+    );
+
+    observer.observe(target);
+    return () => observer.disconnect();
+  }, [shouldLoadMovie]);
 
   const animatorRef = useRef<Animator>(null);
   const canvasCallbackRef = useCallback<RefCallback<HTMLCanvasElement>>(
@@ -66,7 +94,7 @@ export const PausableMovie = ({ src }: Props) => {
   }, [data, isLoading]);
 
   return (
-    <div className="h-full w-full">
+    <div className="h-full w-full" ref={rootRef}>
       <AspectRatioBox aspectHeight={1} aspectWidth={1}>
         <button
           aria-label="動画プレイヤー"
