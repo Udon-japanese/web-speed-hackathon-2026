@@ -9,13 +9,15 @@ import { fetchBinary } from "@web-speed-hackathon-2026/client/src/utils/fetchers
 
 interface Props {
   alt: string;
+  fetchPriority?: "high" | "low" | "auto";
+  loading?: "eager" | "lazy";
   src: string;
 }
 
 /**
  * アスペクト比を維持したまま、要素のコンテンツボックス全体を埋めるように画像を拡大縮小します
  */
-export const CoveredImage = ({ alt, src }: Props) => {
+export const CoveredImage = ({ alt, fetchPriority = "auto", loading = "lazy", src }: Props) => {
   const dialogId = useId();
   const [shouldLoadExifAlt, setShouldLoadExifAlt] = useState(false);
   const shouldFetchExifAlt = shouldLoadExifAlt && alt.trim() === "";
@@ -50,7 +52,8 @@ export const CoveredImage = ({ alt, src }: Props) => {
         alt={alt}
         className="h-full w-full object-cover"
         decoding="async"
-        loading="lazy"
+        fetchPriority={fetchPriority}
+        loading={loading}
         src={src}
       />
 

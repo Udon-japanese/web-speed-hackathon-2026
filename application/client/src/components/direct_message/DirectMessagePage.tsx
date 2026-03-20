@@ -100,8 +100,10 @@ export const DirectMessagePage = ({
           alt={peer.profileImage.alt}
           className="h-12 w-12 rounded-full object-cover"
           decoding="async"
+          height={256}
           loading="lazy"
           src={getProfileImagePath(peer.profileImage.id)}
+          width={256}
         />
         <div className="min-w-0">
           <h1 className="overflow-hidden text-xl font-bold text-ellipsis whitespace-nowrap">
