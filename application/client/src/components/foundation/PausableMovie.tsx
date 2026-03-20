@@ -1,13 +1,9 @@
 import classNames from "classnames";
-import { Animator, Decoder } from "gifler";
-import { GifReader } from "omggif";
-import { useCallback, useEffect, useRef, useState } from "react";
-import type { RefCallback } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
+import type { ReactEventHandler } from "react";
 
 import { AspectRatioBox } from "@web-speed-hackathon-2026/client/src/components/foundation/AspectRatioBox";
 import { FontAwesomeIcon } from "@web-speed-hackathon-2026/client/src/components/foundation/FontAwesomeIcon";
-import { useFetch } from "@web-speed-hackathon-2026/client/src/hooks/use_fetch";
-import { fetchBinary } from "@web-speed-hackathon-2026/client/src/utils/fetchers";
 
 interface Props {
   src: string;
@@ -17,64 +13,55 @@ interface Props {
  * クリックすると再生・一時停止を切り替えます。
  */
 export const PausableMovie = ({ src }: Props) => {
-  const { data, isLoading } = useFetch(src, fetchBinary);
+  const [isLoaded, setIsLoaded] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(true);
+  const imageRef = useRef<HTMLImageElement>(null);
+  const pausedCanvasRef = useRef<HTMLCanvasElement>(null);
 
-  const animatorRef = useRef<Animator>(null);
-  useEffect(() => {
-    return () => {
-      animatorRef.current?.stop();
-    };
+  const shouldReduceMotion = useMemo(() => {
+    return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   }, []);
 
-  const canvasCallbackRef = useCallback<RefCallback<HTMLCanvasElement>>(
-    (el) => {
-      animatorRef.current?.stop();
+  const captureFrame = useCallback(() => {
+    const image = imageRef.current;
+    const canvas = pausedCanvasRef.current;
+    if (
+      image === null ||
+      canvas === null ||
+      image.naturalWidth === 0 ||
+      image.naturalHeight === 0
+    ) {
+      return;
+    }
 
-      if (el === null || data === null) {
-        return;
-      }
+    canvas.width = image.naturalWidth;
+    canvas.height = image.naturalHeight;
+    const ctx = canvas.getContext("2d");
+    if (ctx === null) {
+      return;
+    }
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+  }, []);
 
-      // GIF を解析する
-      const reader = new GifReader(new Uint8Array(data));
-      const frames = Decoder.decodeFramesSync(reader);
-      const firstFrame = frames[0];
-      if (firstFrame === undefined) {
-        return;
-      }
-      const animator = new Animator(reader, frames);
+  const handleLoad = useCallback<ReactEventHandler<HTMLImageElement>>(() => {
+    setIsLoaded(true);
+    if (shouldReduceMotion) {
+      captureFrame();
+      setIsPlaying(false);
+    }
+  }, [captureFrame, shouldReduceMotion]);
 
-      animator.animateInCanvas(el);
-      animator.onFrame(firstFrame);
-
-      // 視覚効果 off のとき GIF を自動再生しない
-      if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-        setIsPlaying(false);
-        animator.stop();
-      } else {
-        setIsPlaying(true);
-        animator.start();
-      }
-
-      animatorRef.current = animator;
-    },
-    [data],
-  );
-
-  const [isPlaying, setIsPlaying] = useState(true);
   const handleClick = useCallback(() => {
     setIsPlaying((isPlaying) => {
       if (isPlaying) {
-        animatorRef.current?.stop();
+        captureFrame();
       } else {
-        animatorRef.current?.start();
+        imageRef.current?.decode().catch(() => {});
       }
       return !isPlaying;
     });
-  }, []);
-
-  if (isLoading || data === null) {
-    return null;
-  }
+  }, [captureFrame]);
 
   return (
     <AspectRatioBox aspectHeight={1} aspectWidth={1}>
@@ -85,7 +72,24 @@ export const PausableMovie = ({ src }: Props) => {
           onClick={handleClick}
           type="button"
         >
-          <canvas ref={canvasCallbackRef} className="w-full" />
+          {!isLoaded ? <div className="bg-cax-surface-subtle h-full w-full" /> : null}
+          <img
+            ref={imageRef}
+            alt=""
+            className={classNames("h-full w-full object-cover", {
+              hidden: !isPlaying,
+            })}
+            decoding="async"
+            loading="lazy"
+            onLoad={handleLoad}
+            src={src}
+          />
+          <canvas
+            ref={pausedCanvasRef}
+            className={classNames("absolute inset-0 h-full w-full object-cover", {
+              hidden: isPlaying,
+            })}
+          />
           <div
             className={classNames(
               "absolute left-1/2 top-1/2 flex items-center justify-center w-16 h-16 text-cax-surface-raised text-3xl bg-cax-overlay/50 rounded-full -translate-x-1/2 -translate-y-1/2",
