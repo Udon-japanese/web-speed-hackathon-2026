@@ -5,6 +5,7 @@
 !application/**
 
 application/**/node_modules
+application/node_modules
 application/**/*.log
 application/dist
 application/e2e
