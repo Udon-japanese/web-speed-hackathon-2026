@@ -1,5 +1,4 @@
-import { load, ImageIFD } from "piexifjs";
-import { useCallback, useId, useMemo, useState } from "react";
+import { useCallback, useEffect, useId, useState } from "react";
 import type { MouseEvent } from "react";
 
 import { Button } from "@web-speed-hackathon-2026/client/src/components/foundation/Button";
@@ -14,6 +13,18 @@ interface Props {
   src: string;
 }
 
+function toBinaryString(buffer: ArrayBuffer): string {
+  const bytes = new Uint8Array(buffer);
+  let result = "";
+  const chunkSize = 0x8000;
+
+  for (let idx = 0; idx < bytes.length; idx += chunkSize) {
+    result += String.fromCharCode(...bytes.subarray(idx, idx + chunkSize));
+  }
+
+  return result;
+}
+
 /**
  * アスペクト比を維持したまま、要素のコンテンツボックス全体を埋めるように画像を拡大縮小します
  */
@@ -22,23 +33,46 @@ export const CoveredImage = ({ alt, fetchPriority = "auto", loading = "lazy", sr
   const [shouldLoadExifAlt, setShouldLoadExifAlt] = useState(false);
   const shouldFetchExifAlt = shouldLoadExifAlt && alt.trim() === "";
   const { data } = useFetch(src, fetchBinary, { enabled: shouldFetchExifAlt });
+  const [displayAlt, setDisplayAlt] = useState(alt);
 
-  const displayAlt = useMemo(() => {
+  useEffect(() => {
     if (alt.trim() !== "") {
-      return alt;
+      setDisplayAlt(alt);
+      return;
     }
 
     if (data === null) {
-      return "";
+      setDisplayAlt("");
+      return;
     }
 
-    try {
-      const exif = load(Buffer.from(data).toString("binary"));
-      const raw = exif?.["0th"]?.[ImageIFD.ImageDescription];
-      return raw != null ? new TextDecoder().decode(Buffer.from(raw, "binary")) : "";
-    } catch {
-      return "";
-    }
+    let cancelled = false;
+
+    void import("piexifjs")
+      .then(({ ImageIFD, load }) => {
+        const exif = load(toBinaryString(data));
+        const raw = exif?.["0th"]?.[ImageIFD.ImageDescription];
+        if (cancelled) {
+          return;
+        }
+
+        if (raw == null) {
+          setDisplayAlt("");
+          return;
+        }
+
+        const bytes = Uint8Array.from(raw, (char) => char.charCodeAt(0));
+        setDisplayAlt(new TextDecoder().decode(bytes));
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setDisplayAlt("");
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
   }, [alt, data]);
 
   // ダイアログの背景をクリックしたときに投稿詳細ページに遷移しないようにする
