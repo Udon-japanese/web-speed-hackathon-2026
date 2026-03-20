@@ -1,6 +1,13 @@
-node_modules
-.git
-*.log
+*
+!Dockerfile
+!.dockerignore
+!application
+!application/**
 
+application/**/node_modules
+application/**/*.log
+application/dist
+application/e2e
+application/e2e/test-results
 application/server/seeds
 application/server/upload
