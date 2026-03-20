@@ -4,12 +4,14 @@ const path = require("path");
 const CopyWebpackPlugin = require("copy-webpack-plugin");
 const HtmlWebpackPlugin = require("html-webpack-plugin");
 const MiniCssExtractPlugin = require("mini-css-extract-plugin");
+const TerserPlugin = require("terser-webpack-plugin");
 const webpack = require("webpack");
 
 const SRC_PATH = path.resolve(__dirname, "./src");
 const PUBLIC_PATH = path.resolve(__dirname, "../public");
 const UPLOAD_PATH = path.resolve(__dirname, "../upload");
 const DIST_PATH = path.resolve(__dirname, "../dist");
+const isProduction = process.env.NODE_ENV === "production";
 
 /** @type {import('webpack').Configuration} */
 const config = {
@@ -25,7 +27,7 @@ const config = {
     ],
     static: [PUBLIC_PATH, UPLOAD_PATH],
   },
-  devtool: "inline-source-map",
+  devtool: isProduction ? false : "inline-source-map",
   entry: {
     main: [
       "core-js",
@@ -60,7 +62,6 @@ const config = {
   },
   output: {
     chunkFilename: "scripts/chunk-[contenthash].js",
-    chunkFormat: false,
     filename: "scripts/[name].js",
     path: DIST_PATH,
     publicPath: "auto",
@@ -128,11 +129,21 @@ const config = {
     },
   },
   optimization: {
-    minimize: false,
+    minimize: isProduction,
+    minimizer: [
+      new TerserPlugin({
+        terserOptions: {
+          parse: { ecma: 2020 },
+          compress: { ecma: 2020 },
+          mangle: true,
+          output: { ecma: 2020 },
+        },
+      }),
+    ],
     splitChunks: false,
-    concatenateModules: false,
+    concatenateModules: isProduction,
+    providedExports: isProduction,
     usedExports: false,
-    providedExports: false,
     sideEffects: false,
   },
   cache: false,
