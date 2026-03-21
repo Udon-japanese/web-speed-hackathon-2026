@@ -6,9 +6,18 @@ import { AppPage } from "@web-speed-hackathon-2026/client/src/components/applica
 import { AuthModalContainer } from "@web-speed-hackathon-2026/client/src/containers/AuthModalContainer";
 import { NewPostModalContainer } from "@web-speed-hackathon-2026/client/src/containers/NewPostModalContainer";
 import { NotFoundContainer } from "@web-speed-hackathon-2026/client/src/containers/NotFoundContainer";
-import { SearchContainer } from "@web-speed-hackathon-2026/client/src/containers/SearchContainer";
-import { TimelineContainer } from "@web-speed-hackathon-2026/client/src/containers/TimelineContainer";
 import { fetchJSON, sendJSON } from "@web-speed-hackathon-2026/client/src/utils/fetchers";
+
+const TimelineContainer = lazy(() =>
+  import("@web-speed-hackathon-2026/client/src/containers/TimelineContainer").then((module) => ({
+    default: module.TimelineContainer,
+  })),
+);
+const SearchContainer = lazy(() =>
+  import("@web-speed-hackathon-2026/client/src/containers/SearchContainer").then((module) => ({
+    default: module.SearchContainer,
+  })),
+);
 
 const DirectMessageListContainer = lazy(() =>
   import("@web-speed-hackathon-2026/client/src/containers/DirectMessageListContainer").then(
@@ -48,7 +57,9 @@ export const AppContainer = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    window.scrollTo(0, 0);
+    if (pathname !== "") {
+      window.scrollTo(0, 0);
+    }
   }, [pathname]);
 
   const [activeUser, setActiveUser] = useState<Models.User | null>(null);

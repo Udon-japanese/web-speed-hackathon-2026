@@ -1,4 +1,5 @@
-import { MouseEventHandler, useCallback } from "react";
+import { useCallback } from "react";
+import type { PointerEventHandler } from "react";
 import { Link, useNavigate } from "react-router";
 
 import { ImageArea } from "@web-speed-hackathon-2026/client/src/components/post/ImageArea";
@@ -32,15 +33,20 @@ const isClickedAnchorOrButton = (target: EventTarget | null, currentTarget: Elem
 interface Props {
   post: Models.Post;
   prioritizeFirstImage?: boolean;
+  prioritizeProfileImage?: boolean;
 }
 
-export const TimelineItem = ({ post, prioritizeFirstImage = false }: Props) => {
+export const TimelineItem = ({
+  post,
+  prioritizeFirstImage = false,
+  prioritizeProfileImage = false,
+}: Props) => {
   const navigate = useNavigate();
 
   /**
    * ボタンやリンク以外の箇所をクリックしたとき かつ 文字が選択されてないとき、投稿詳細ページに遷移する
    */
-  const handleClick = useCallback<MouseEventHandler>(
+  const handlePointerUp = useCallback<PointerEventHandler<HTMLElement>>(
     (ev) => {
       const isSelectedText = document.getSelection()?.isCollapsed === false;
       if (!isClickedAnchorOrButton(ev.target, ev.currentTarget) && !isSelectedText) {
@@ -51,7 +57,7 @@ export const TimelineItem = ({ post, prioritizeFirstImage = false }: Props) => {
   );
 
   return (
-    <article className="hover:bg-cax-surface-subtle px-1 sm:px-4" onClick={handleClick}>
+    <article className="hover:bg-cax-surface-subtle px-1 sm:px-4" onPointerUp={handlePointerUp}>
       <div className="border-cax-border flex border-b px-2 pt-2 pb-4 sm:px-4">
         <div className="shrink-0 grow-0 pr-2 sm:pr-4">
           <Link
@@ -62,8 +68,9 @@ export const TimelineItem = ({ post, prioritizeFirstImage = false }: Props) => {
               alt={post.user.profileImage.alt}
               className="h-full w-full object-cover"
               decoding="async"
+              fetchPriority={prioritizeProfileImage ? "high" : "auto"}
               height={256}
-              loading="lazy"
+              loading={prioritizeProfileImage ? "eager" : "lazy"}
               src={getProfileImagePath(post.user.profileImage.id)}
               width={256}
             />
