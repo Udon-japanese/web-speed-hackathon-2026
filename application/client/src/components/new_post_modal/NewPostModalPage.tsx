@@ -46,6 +46,12 @@ export const NewPostModalPage = ({ id, hasError, isLoading, onResetError, onSubm
 
     setHasFileError(isValid !== true);
     if (isValid) {
+      setParams((params) => ({
+        ...params,
+        images: files,
+        movie: undefined,
+        sound: undefined,
+      }));
       setIsConverting(true);
 
       Promise.all(
@@ -64,10 +70,11 @@ export const NewPostModalPage = ({ id, hasError, isLoading, onResetError, onSubm
             movie: undefined,
             sound: undefined,
           }));
-
-          setIsConverting(false);
         })
-        .catch(console.error);
+        .catch(console.error)
+        .finally(() => {
+          setIsConverting(false);
+        });
     }
   }, []);
 
@@ -88,10 +95,11 @@ export const NewPostModalPage = ({ id, hasError, isLoading, onResetError, onSubm
             movie: undefined,
             sound: new File([converted], "converted.mp3", { type: "audio/mpeg" }),
           }));
-
-          setIsConverting(false);
         })
-        .catch(console.error);
+        .catch(console.error)
+        .finally(() => {
+          setIsConverting(false);
+        });
     }
   }, []);
 
@@ -114,12 +122,16 @@ export const NewPostModalPage = ({ id, hasError, isLoading, onResetError, onSubm
             }),
             sound: undefined,
           }));
-
-          setIsConverting(false);
         })
-        .catch(console.error);
+        .catch(console.error)
+        .finally(() => {
+          setIsConverting(false);
+        });
     }
   }, []);
+
+  const requiresConversion =
+    isConverting && (params.movie !== undefined || params.sound !== undefined);
 
   const handleSubmit = useCallback<FormEventHandler<HTMLFormElement>>(
     (ev) => {
@@ -168,10 +180,10 @@ export const NewPostModalPage = ({ id, hasError, isLoading, onResetError, onSubm
       </div>
 
       <ModalSubmitButton
-        disabled={isConverting || isLoading || params.text === ""}
-        loading={isConverting || isLoading}
+        disabled={requiresConversion || isLoading || params.text.trim() === "" || hasFileError}
+        loading={requiresConversion || isLoading}
       >
-        {isConverting || isLoading ? "変換中" : "投稿する"}
+        {requiresConversion || isLoading ? "変換中" : "投稿する"}
       </ModalSubmitButton>
 
       <ModalErrorMessage>

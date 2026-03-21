@@ -13,7 +13,7 @@ interface Props {
 }
 
 export const SoundPlayer = ({ sound }: Props) => {
-  const [shouldLoadSound, setShouldLoadSound] = useState(false);
+  const [shouldLoadSound, setShouldLoadSound] = useState(true);
   const [shouldAutoplay, setShouldAutoplay] = useState(false);
   const { data, isLoading } = useFetch(getSoundPath(sound.id), fetchBinary, {
     enabled: shouldLoadSound,
