@@ -84,22 +84,13 @@ export const NewPostModalPage = ({ id, hasError, isLoading, onResetError, onSubm
 
     setHasFileError(isValid !== true);
     if (isValid) {
-      setIsConverting(true);
-
-      import("@web-speed-hackathon-2026/client/src/utils/convert_sound")
-        .then(({ convertSound }) => convertSound(file, { extension: "mp3" }))
-        .then((converted) => {
-          setParams((params) => ({
-            ...params,
-            images: [],
-            movie: undefined,
-            sound: new File([converted], "converted.mp3", { type: "audio/mpeg" }),
-          }));
-        })
-        .catch(console.error)
-        .finally(() => {
-          setIsConverting(false);
-        });
+      setIsConverting(false);
+      setParams((params) => ({
+        ...params,
+        images: [],
+        movie: undefined,
+        sound: file,
+      }));
     }
   }, []);
 
@@ -109,27 +100,15 @@ export const NewPostModalPage = ({ id, hasError, isLoading, onResetError, onSubm
 
     setHasFileError(isValid !== true);
     if (isValid) {
-      setIsConverting(true);
-
-      import("@web-speed-hackathon-2026/client/src/utils/convert_movie")
-        .then(({ convertMovie }) => convertMovie(file, { extension: "gif", size: 480 }))
-        .then((converted) => {
-          setParams((params) => ({
-            ...params,
-            images: [],
-            movie: new File([converted], "converted.gif", {
-              type: "image/gif",
-            }),
-            sound: undefined,
-          }));
-        })
-        .catch(console.error)
-        .finally(() => {
-          setIsConverting(false);
-        });
+      setIsConverting(false);
+      setParams((params) => ({
+        ...params,
+        images: [],
+        movie: file,
+        sound: undefined,
+      }));
     }
   }, []);
-
   const requiresConversion =
     isConverting && (params.movie !== undefined || params.sound !== undefined);
 
